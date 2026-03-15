@@ -1,2 +1,396 @@
 # Weather-Data-Pipeline-System
 This repository contains a data  project, including datasets, preprocessing, EDA, visualizations, and insights using Python.
+# Weather Data Pipeline System
+
+## Project Overview
+
+The Weather Data Pipeline System is an end-to-end data engineering project that collects real-time weather data from the OpenWeatherMap API, processes and cleans the data, stores it in a structured SQLite database, and generates automated reports for historical weather analysis.
+
+This project demonstrates the implementation of a complete **ETL (Extract, Transform, Load) pipeline** along with **data validation, scheduling, and monitoring** features.
+
+The system continuously gathers weather information and builds a historical dataset that can be used for trend analysis and reporting.
+
+---
+
+# Objectives
+
+The main goals of this project are:
+
+* Build a complete ETL pipeline
+* Integrate external APIs for data extraction
+* Store structured data in a relational database
+* Implement automated data collection
+* Perform weather trend analysis
+* Generate automated reports
+* Monitor pipeline health and failures
+
+---
+
+# Technologies Used
+
+Python
+SQLite
+OpenWeatherMap API
+Pandas
+Requests
+Schedule Library
+Logging Module
+
+Optional tools:
+Docker, Airflow, Power BI
+
+---
+
+# System Architecture
+
+```
+Weather API
+     ↓
+Extraction Layer
+     ↓
+Transformation Layer
+     ↓
+Data Validation
+     ↓
+SQLite Database
+     ↓
+Analytics Queries
+     ↓
+Reports & Alerts
+```
+
+---
+
+# Project Structure
+
+```
+weather-data-pipeline
+
+README.md
+requirements.txt
+
+config
+    config.py
+
+data
+    weather.db
+
+src
+    api_client.py
+    etl_pipeline.py
+    database.py
+    data_validation.py
+    scheduler.py
+    reporting.py
+    monitoring.py
+
+logs
+    pipeline.log
+
+reports
+    daily_report.csv
+    weekly_report.csv
+
+notebooks
+    weather_analysis.ipynb
+```
+
+---
+
+# Database Design
+
+The database is designed using **normalized tables** to avoid redundancy.
+
+## Locations Table
+
+```
+location_id
+city
+country
+latitude
+longitude
+```
+
+## Weather Observations Table
+
+```
+weather_id
+location_id
+temperature
+humidity
+pressure
+weather_condition
+wind_speed
+timestamp
+```
+
+## Forecast Table
+
+```
+forecast_id
+location_id
+temperature
+humidity
+forecast_time
+weather_condition
+```
+
+Relationships:
+
+```
+Locations 1 → N Weather Observations
+Locations 1 → N Forecast
+```
+
+---
+
+# ETL Pipeline
+
+## 1. Extract
+
+Weather data is fetched from the OpenWeatherMap API.
+
+Example:
+
+```python
+import requests
+
+url = "https://api.openweathermap.org/data/2.5/weather"
+params = {
+    "q": "Chennai",
+    "appid": API_KEY,
+    "units": "metric"
+}
+
+response = requests.get(url, params=params)
+data = response.json()
+```
+
+---
+
+## 2. Transform
+
+The raw API response is cleaned and structured.
+
+Example transformation steps:
+
+* Extract temperature
+* Extract humidity
+* Convert timestamps
+* Standardize weather conditions
+
+Example:
+
+```python
+weather_data = {
+    "temperature": data["main"]["temp"],
+    "humidity": data["main"]["humidity"],
+    "pressure": data["main"]["pressure"],
+    "condition": data["weather"][0]["description"]
+}
+```
+
+---
+
+## 3. Load
+
+Cleaned data is inserted into the SQLite database.
+
+Example:
+
+```python
+import sqlite3
+
+conn = sqlite3.connect("weather.db")
+cursor = conn.cursor()
+
+cursor.execute("""
+INSERT INTO weather_observations
+(location_id, temperature, humidity, pressure, wind_speed, timestamp)
+VALUES (?, ?, ?, ?, ?, ?)
+""", values)
+
+conn.commit()
+```
+
+---
+
+# Data Validation
+
+Data quality checks include:
+
+* Missing value detection
+* Range validation (temperature, humidity)
+* Duplicate record checks
+* Timestamp verification
+
+Example validation rule:
+
+```
+Temperature range: -50°C to 60°C
+Humidity range: 0–100%
+Wind speed cannot be negative
+```
+
+---
+
+# Automation & Scheduling
+
+The pipeline automatically collects data at scheduled intervals.
+
+Example scheduler:
+
+```python
+import schedule
+import time
+
+schedule.every(1).hour.do(run_pipeline)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
+```
+
+---
+
+# Logging & Monitoring
+
+The system logs pipeline activities and errors.
+
+Example:
+
+```
+INFO: Data extraction successful
+INFO: 1 record inserted
+WARNING: API response delay
+ERROR: Database connection failed
+```
+
+Log file location:
+
+```
+logs/pipeline.log
+```
+
+Monitoring features include:
+
+* Pipeline health check
+* API availability check
+* Data freshness verification
+
+---
+
+# Analytics Queries
+
+Example SQL queries for analysis.
+
+## Average Temperature by City
+
+```sql
+SELECT city, AVG(temperature)
+FROM weather_observations
+JOIN locations USING(location_id)
+GROUP BY city;
+```
+
+---
+
+## Daily Temperature Trend
+
+```sql
+SELECT DATE(timestamp), AVG(temperature)
+FROM weather_observations
+GROUP BY DATE(timestamp);
+```
+
+---
+
+# Automated Reports
+
+Reports generated by the system include:
+
+Daily Weather Summary
+
+```
+City
+Average Temperature
+Humidity
+Weather Condition
+Wind Speed
+```
+
+Weekly Weather Trend
+
+```
+Average Temperature
+Temperature Range
+Rain Probability
+```
+
+Reports are saved in:
+
+```
+reports/
+```
+
+---
+
+# Deployment
+
+Steps to run the project:
+
+### Install dependencies
+
+```
+pip install -r requirements.txt
+```
+
+### Run pipeline
+
+```
+python src/etl_pipeline.py
+```
+
+### Start scheduler
+
+```
+python src/scheduler.py
+```
+
+---
+
+# Future Improvements
+
+Potential improvements include:
+
+* Airflow orchestration
+* Cloud storage (AWS S3)
+* Dashboard visualization using Power BI
+* Real-time streaming with Kafka
+* Weather prediction using machine learning
+
+---
+
+# Learning Outcomes
+
+This project demonstrates:
+
+* API integration
+* ETL pipeline development
+* SQL database design
+* Data validation techniques
+* Workflow automation
+* Data engineering architecture
+
+---
+
+# Author
+
+Ranganathan
+Data Analyst / Data Engineering Learner
+
+---
+
+# License
+
+This project is created for educational and portfolio purposes.
